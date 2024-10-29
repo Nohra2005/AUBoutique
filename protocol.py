@@ -25,10 +25,14 @@ def client_handler(client_socket):
                     online_users[username] = client_socket  # Add user to online list
             elif data["command"] == "add_product":
                 response = add_product(data)
+            elif data["command"] == "view_buyers":
+                response = view_buyers(username)
             elif data["command"] == "view_products":
                 response = view_products()
             elif data["command"] == "view_products_by_owner":
                 response = view_products_by_owner(data)
+            elif data["command"] == "buy_product":
+                response = buy_product(username,data)
             elif data["command"] == "check_online_status":
                 response = check_online_status(data)
             elif data["command"] == "send_message":
@@ -86,7 +90,7 @@ def add_product(product_data):
     conn = _sqlite3.connect('auboutique.db')
     c = conn.cursor()
     try:
-        c.execute("INSERT INTO products (name, description, price, owner) VALUES (?, ?, ?, ?)",
+        c.execute("INSERT INTO products (name, description, price, owner, buyer) VALUES (?, ?, ?, ?, NULL)",
                   (product_data["name"], product_data["description"], product_data["price"], product_data["owner"]))
         conn.commit()
         return "Product added successfully"
@@ -95,12 +99,30 @@ def add_product(product_data):
     finally:
         conn.close()
 
+# View product buyers
+def view_buyers(owner):
+    conn = _sqlite3.connect('auboutique.db')
+    c = conn.cursor()
+    try:
+        c.execute("""
+        SELECT p.name, u.name, u.username, u.email 
+        FROM products p 
+        JOIN users u ON p.buyer = u.username 
+        WHERE p.owner=? AND p.buyer IS NOT NULL
+        """, (owner,))
+        buyers = c.fetchall()
+        return json.dumps(buyers)
+    except _sqlite3.Error as e:
+        return f"Database error: {e}"
+    finally:
+        conn.close()
+        
 # View products function
 def view_products():
     conn = _sqlite3.connect('auboutique.db')
     c = conn.cursor()
     try:
-        c.execute("SELECT * FROM products")
+        c.execute("SELECT * FROM products WHERE buyer IS NULL")
         products = c.fetchall()
         return json.dumps(products)
     except _sqlite3.Error as e:
@@ -116,6 +138,26 @@ def view_products_by_owner(data):
         c.execute("SELECT * FROM products WHERE owner=?", (data["owner"],))
         products = c.fetchall()
         return json.dumps(products) if products else "No products found for this owner"
+    except _sqlite3.Error as e:
+        return f"Database error: {e}"
+    finally:
+        conn.close()
+        
+#Buy product
+def buy_product(buyer,data):
+    conn = _sqlite3.connect('auboutique.db')
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, buyer FROM products WHERE name=?", (data["product"],))
+        product = c.fetchone()
+        if product==None:
+            return "This product does not exist."
+        elif product[1]!=None:
+            return "This product has already been purchased."
+        
+        c.execute("UPDATE products SET buyer=? WHERE id=?", (buyer, product[0]))
+        conn.commit()
+        return "Product purchased successfully"
     except _sqlite3.Error as e:
         return f"Database error: {e}"
     finally:

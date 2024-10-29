@@ -44,11 +44,13 @@ while True:
     
 while True:
     print("\n1. Add a product")
-    print("2. View all products")
-    print("3. View products by owner")
-    print("4. Check if owner is online")
-    print("5. Message owner")
-    print("6. Quit")
+    print("2. View my product's buyers")
+    print("3. View all products")
+    print("4. View products by owner")
+    print("5. Buy product")
+    print("6. Check if owner is online")
+    print("7. Message owner")
+    print("8. Quit")
     action = input("Choose an action: ")
 
     if action == "1":
@@ -65,26 +67,35 @@ while True:
         print(result)
 
     elif action == "2":
+        my_buyers = send_command("view_buyers")
+        print("My product's buyers:", my_buyers)
+
+    elif action == "3":
         products = send_command("view_products")
         print("Available products:", products)
 
-    elif action == "3":
+    elif action == "4":
         owner = input("Enter owner's username: ")
         products_by_owner = send_command("view_products_by_owner", {"owner": owner})
         print(f"Products by {owner}:", products_by_owner)
     
-    elif action == "4":
+    elif action == "5":
+        product = input("Enter product name: ")
+        result = send_command("buy_product", {"product": product})
+        print(result)
+    
+    elif action == "6":
         owner = input("Enter owner's username: ")
         online_status = send_command("check_online_status", {"owner": owner})
         print(online_status)
         
-    elif action == "5":
+    elif action == "7":
         owner = input("Enter the username you want to message: ")
         msg = input("Enter your message: ")
         rcpt_status = send_command("send_message", ({"owner": owner}, {"message": msg}))
         print(rcpt_status)
         
-    elif action == "6":
+    elif action == "8":
         print("Thank you for using AUBoutique!")
         send_command("quit")
         break
