@@ -1,9 +1,12 @@
 from socket import *
 import json
+import threading
+import time
 
 # Client setup
 client = socket(AF_INET, SOCK_STREAM)
 client.connect(('localhost', 8888))
+
 
 # Function to send a command to the server
 def send_command(command, data=None):
@@ -11,7 +14,29 @@ def send_command(command, data=None):
     if data:
         message.update(data)
     client.send(json.dumps(message).encode('utf-8'))
-    return client.recv(1024).decode('utf-8')
+    while len(responses)==0:
+        pass
+    return responses.pop()
+
+responses=[]
+
+# Function to listen for incoming messages
+def listen_for_responses():
+    while True:
+        try:
+            message = client.recv(1024).decode('utf-8')
+            if message.startswith("Message from"):
+                print(message) # Add the message to the shared list
+            else:
+                responses.append(message)
+        except BlockingIOError:
+            time.sleep(0.1)  # Wait a bit if no messages are available to avoid CPU overuse
+        except:
+            print("Connection to the server was lost.")
+            break
+
+listener_thread = threading.Thread(target=listen_for_responses, daemon=True)
+listener_thread.start()
 
 while True:
     # Registration
@@ -39,10 +64,11 @@ while True:
         login_data = {"username": username, "password": password}
         result = send_command("login", login_data)
         print(result)
-        if result == "Login successful":
+        if result.startswith("Login successful"):
             break
     
 while True:
+            
     print("\n1. Add a product")
     print("2. View my product's buyers")
     print("3. View all products")
@@ -92,7 +118,7 @@ while True:
     elif action == "7":
         owner = input("Enter the username you want to message: ")
         msg = input("Enter your message: ")
-        rcpt_status = send_command("send_message", ({"owner": owner}, {"message": msg}))
+        rcpt_status = send_command("send_message", {"owner": owner, "message": msg})
         print(rcpt_status)
         
     elif action == "8":
