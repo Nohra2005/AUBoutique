@@ -26,10 +26,10 @@ def client_handler(client_socket):
                 response = login_handling(data)
                 if response == "Login successful":
                     username = data["username"]
-                    online_users[username] = client_socket # Add user to online list
+                    online_users[username] = client_socket 
                     pending_msgs = get_pending_messages(username)
                     if len(pending_msgs)!=0:
-                        response += "\nYou have pending messages:\n" + "\n".join(pending_msgs)
+                        response += "\n\nYou have pending messages:\n" + "\n".join(pending_msgs)
             elif data["command"] == "add_product":
                 response = add_product(data)
             elif data["command"] == "view_buyers":
@@ -55,6 +55,7 @@ def client_handler(client_socket):
 
         except ConnectionResetError:
             print("Client disconnected")
+            online_users[username]=None
             break
 
     client_socket.close()
@@ -145,7 +146,7 @@ def view_products_by_owner(data):
     try:
         c.execute("SELECT * FROM products WHERE owner=?", (data["owner"],))
         products = c.fetchall()
-        return json.dumps(products) if products else "No products found for this owner"
+        return json.dumps(products)
     except _sqlite3.Error as e:
         return f"Database error: {e}"
     finally:
@@ -173,27 +174,41 @@ def buy_product(buyer,data):
         
 #Functions that allows client to check if a user is online
 def check_online_status(user):
-    user = user["owner"]
-    if user in online_users:
-        if online_users[user]!=False:
-            return f"{user} is online"
+    username = user["owner"]
+    conn = _sqlite3.connect('auboutique.db')
+    c = conn.cursor()
+    try:
+        c.execute("SELECT 1 FROM users WHERE username = ?", (username,))
+        if not c.fetchone(): 
+            return f"{username} doesn't exist"
+
+        if username in online_users and online_users[username] != None:
+            return f"{username} is online"
         else:
-            return f"{user} is offline"
-    else:
-        return f"{user} doesn't exist"
+            return f"{username} is offline"
+            
+    except _sqlite3.Error as e:
+        return f"Database error: {e}"
+    
+    finally:
+        conn.close()
 
 #Allows client to send a message to another user
 def send_message(sender, receiver, message):
     conn = _sqlite3.connect('auboutique.db')
     c = conn.cursor()
     try:
+        c.execute("SELECT 1 FROM users WHERE username = ?", (receiver,))
+        if c.fetchone()==None:
+            return f"User {receiver} does not exist."
+        
         status = "pending"
         if receiver in online_users and online_users[receiver] != None:
             rcv_socket = online_users[receiver]
             rcv_socket.send(f"\nNew message from {sender}:\n{message}".encode('utf-8'))
             status = "sent"
         
-        c.execute("INSERT INTO messages (sender, receiver, message, status) VALUES (?, ?, ?, ?)", (sender, receiver, message, status))
+        c.execute("INSERT INTO messages (sender, receiver, message, status) VALUES (?, ?, ?, ?)", (sender, receiver, f"Message from {sender}: \n {message}", status))
         conn.commit()
         return f"Message to {receiver} {'sent' if status == 'sent' else 'queued for delivery'}."
     except _sqlite3.Error as e:
@@ -207,7 +222,7 @@ def get_pending_messages(receiver):
     c = conn.cursor()
     try:
         c.execute("SELECT message FROM messages WHERE receiver=? AND status='pending'", (receiver,))
-        messages = [x.decode('utf-8') for x in c.fetchall()]
+        messages = [x[0] for x in c.fetchall()]
         c.execute("UPDATE messages SET status='sent' WHERE receiver=? AND status='pending'", (receiver,))
         conn.commit()
         return messages
