@@ -1,5 +1,6 @@
 import json
 import _sqlite3
+from datetime import datetime, timedelta
 
 online_users = {}
 
@@ -166,7 +167,10 @@ def buy_product(buyer,data):
         
         c.execute("UPDATE products SET buyer=? WHERE id=?", (buyer, product[0]))
         conn.commit()
-        return "Product purchased successfully"
+        
+        pickup_date = datetime.now() + timedelta(days=2)
+
+        return f"Product purchased successfully.\nPick up your item on {pickup_date.date()} any time after 8:00 AM from AUB Post Office."
     except _sqlite3.Error as e:
         return f"Database error: {e}"
     finally:

@@ -26,11 +26,11 @@ def listen_for_responses():
         try:
             message = client.recv(1024).decode('utf-8')
             if message.startswith("\nNew message from"):
-                print(message) # Add the message to the shared list
+                print(message) 
             else:
                 responses.append(message)
         except BlockingIOError:
-            time.sleep(0.1)  # Wait a bit if no messages are available to avoid CPU overuse
+            time.sleep(0.1)  
         except:
             print("Connection to the server was lost.")
             break
