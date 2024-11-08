@@ -1,9 +1,9 @@
 # AUBoutique
 
 **Created by:**  
-- [Christophe El Chabab]  
-- [Joey Saade]
-- [Tatiana Nohra]  
+- Christophe El Chabab
+- Joey Saade
+- Tatiana Nohra  
 
 ---
 
@@ -56,7 +56,7 @@ Ensure you have the following installed:
      ```bash
      python AUBoutique_client.py
      ```
-   - Follow the on-screen instructions to register, log in, and interact with the application.
+   - Follow the on-screen instructions to register, log in, and interact with the application (GUI is the implementation of part of phase II)
      
 5. **Multiple Clients**
    - You can run as many instances of the client as you want, allowing multiple users to interact with the server simultaneously. Open a new terminal for each client instance and run the same script.
@@ -82,17 +82,15 @@ Ensure you have the following installed:
 - **Standard Libraries**:
   - `socket`: For managing network connections.
   - `json`: For encoding and decoding client-server communication.
-  - `sqlite3`: For lightweight database management.
-  - `threading`: For handling asynchronous operations like message listening.
+  - `sqlite3`: For database management.
+  - `threading`: For handling asynchronous operations like response listening.
   - `datetime`: For managing and formatting dates in the application.
-  - `time`: For delaying operations in asynchronous loops.
+  - `time`: For delaying operations in loops.
 ---
 
 ## Notes
 - The client and server must run on the same network for testing.
 - Ensure the database file `auboutique.db` is always available in the server's working directory.
-- Pickup schedules for purchases are automated to two days after the transaction date, at 8:00 AM.
+- Pickup schedules for purchases are automated to two days after the transaction date.
 
 --- 
-
-Feel free to reach out for any clarifications or further enhancements to the project!
